@@ -1,0 +1,48 @@
+{
+  "name": "react-source-debugger",
+  "version": "0.0.1",
+  "description": "A debugger for learning React source code",
+  "main": "src/index.js",
+  "type": "module",
+  "bin": {
+    "rsd": "src/bin.js"
+  },
+  "exports": {
+    "node": {
+      "import": "./src/index.js",
+      "require": "./src/index.js"
+    }
+  },
+  "scripts": {
+    "test": "yarn global add /Users/liangjianwen/Desktop/workspace/projects/react-source-debugger",
+    "test2": "cp src/bin.js /Users/liangjianwen/.yarn/bin/rsd"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/avennn/react-source-debugger.git"
+  },
+  "keywords": [
+    "react",
+    "debugger",
+    "debug",
+    "source",
+    "code",
+    "sourcemap"
+  ],
+  "author": {
+    "name": "Javen Leung",
+    "email": "914301050@qq.com",
+    "url": "https://github.com/avennn"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/avennn/react-source-debugger/issues"
+  },
+  "homepage": "https://github.com/avennn/react-source-debugger#readme",
+  "dependencies": {
+    "execa": "^7.1.1",
+    "github-api": "^3.4.0",
+    "isomorphic-git": "^1.23.0",
+    "shelljs": "^0.8.5"
+  }
+}
