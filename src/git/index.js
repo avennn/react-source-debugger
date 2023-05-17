@@ -1,2 +1,4 @@
-export { default as checkout } from './checkout.js';
-export { default as shallowClone } from './clone.js';
+export * from './checkout.js';
+export * from './clone.js';
+export * from './tag.js';
+export * from './fetch.js';

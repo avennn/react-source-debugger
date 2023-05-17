@@ -12,7 +12,12 @@ import gitHttp from 'isomorphic-git/http/node/index.js';
 import chalk from 'chalk';
 import { cd, uncd } from '../shell/index.js';
 import { isFileOrDirExisted } from '../file.js';
-import { shallowClone } from '../git/index.js';
+import {
+  shallowClone,
+  checkout,
+  listTags,
+  fetchRemoteTag,
+} from '../git/index.js';
 
 const require = createRequire(import.meta.url);
 
@@ -90,19 +95,20 @@ async function finalizeConfig(target) {
   const defaultConfig = {
     // reactDir: path.join(cwd, 'react'),
     // projectDir: path.join(cwd, 'my-react-app'),
+    // TODO: auto set as the newest version
     reactVersion: '18.2.0',
   };
   return Object.assign(defaultConfig, config);
 }
 
-function gitCloneReact(reactVersion) {
+function gitCloneReact({ dir, ref }) {
   // git@github.com:facebook/react.git
   // https://github.com/facebook/react.git
   return new Promise((resolve, reject) => {
     shallowClone({
       repoUrl: 'git@github.com:facebook/react.git',
-      branch: `v${reactVersion}`,
-      destDir: path.join(process.cwd(), 'react'),
+      ref,
+      dir,
       // close detached head advice
       options: ['-c', 'advice.detachedHead=false'],
       onProgress(data) {
@@ -122,21 +128,56 @@ function gitCloneReact(reactVersion) {
   });
 }
 
+function fetchReactRemoteTag({ dir, ref }) {
+  return new Promise((resolve, reject) => {
+    fetchRemoteTag({
+      dir,
+      ref,
+      onProgress(data) {
+        console.log(data);
+      },
+      onSuccess() {
+        resolve();
+      },
+      onFail() {
+        reject(new Error(`Fail to fetch react tag ${ref} from remote.`));
+      },
+    });
+  });
+}
+
+async function prepareReact(reactDir, reactVesion) {
+  const tag = `v${reactVesion}`;
+
+  if (!reactDir) {
+    console.log(chalk.greenBright('Cloning react...'));
+
+    reactDir = path.join(process.cwd(), 'react');
+    await gitCloneReact({ dir: reactDir, ref: tag });
+
+    console.log(chalk.greenBright('Clone react done!'));
+  } else {
+    const tags = await listTags({ dir: reactDir });
+    if (!tags.includes(tag)) {
+      await fetchReactRemoteTag({ dir: reactDir, ref: tag });
+    }
+    await checkout({ dir: reactDir, ref: tag });
+  }
+
+  return reactDir;
+}
+
 // reactPath: /Users/liangjianwen/Desktop/workspace/test/react
 // projectPath: /Users/liangjianwen/Desktop/workspace/test/react-debug-demo2
 export default async function init(options) {
   const { config: targetConfig } = options;
+
   // allow rsd.config.{json,js,cjs,mjs}
   const config = await finalizeConfig(targetConfig);
+  // TODO: check validation of config
   console.log('Running with config: ', config);
 
-  if (!config.reactDir) {
-    console.log(chalk.greenBright('Cloning react...'));
-    await gitCloneReact(config.reactVersion);
-    console.log(chalk.greenBright('Clone react done!'));
-  } else {
-    // TODO: checkout to reactVersion
-  }
+  const reactDir = await prepareReact(config.reactDir, config.reactVersion);
 
   // const workspacePath = path.join(process.cwd(), `${name}.code-workspace`);
 

@@ -1,11 +1,10 @@
 import util from 'node:util';
 import { exec as execLegacy } from 'node:child_process';
-import { cd } from '../shell/index.js';
+import shell from 'shelljs';
 
 const exec = util.promisify(execLegacy);
 
-export default async function checkout({ dir, ref }) {
-  const uncd = cd(dir);
+export async function checkout({ dir, ref }) {
+  shell.cd(dir);
   await exec(`git checkout ${ref}`);
-  uncd();
 }

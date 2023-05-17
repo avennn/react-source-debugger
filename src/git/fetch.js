@@ -1,36 +1,37 @@
 import { spawn } from 'node:child_process';
+import shell from 'shelljs';
 
-export async function shallowClone(options) {
+export function fetchRemoteTag(options) {
+  // git fetch origin +refs/tags/1.0.0:refs/tags/1.0.0
   const {
-    repoUrl,
-    ref,
     dir,
+    ref,
     options: extraOpts = [],
     onProgress = () => {},
     onSuccess = () => {},
     onFail = () => {},
   } = options;
 
-  const gitClone = spawn('git', [
-    'clone',
-    repoUrl,
-    '--branch',
-    ref,
+  shell.cd(dir);
+
+  const gitFetch = spawn('git', [
+    'fetch',
+    'origin',
+    `+refs/tags/${ref}:refs/tags/${ref}`,
     '--depth',
     1,
     '--progress',
     ...extraOpts,
-    dir,
   ]);
-  gitClone.stdout.on('data', (data) => {
+  gitFetch.stdout.on('data', (data) => {
     onProgress(data.toString());
   });
 
-  gitClone.stderr.on('data', (data) => {
+  gitFetch.stderr.on('data', (data) => {
     onProgress(data.toString());
   });
 
-  gitClone.on('close', (code, signal) => {
+  gitFetch.on('close', (code, signal) => {
     if (code === 0) {
       onSuccess();
     } else {
