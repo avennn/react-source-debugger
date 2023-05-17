@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { Command } from 'commander';
+import chalk from 'chalk';
 import { getDirName } from './utils.js';
 import { create, init } from './commands/index.js';
 
@@ -38,17 +39,5 @@ try {
 
   program.parse();
 } catch (e) {
-  console.error(e);
+  console.error(chalk.redBright(e.message));
 }
-
-// import { init } from './index.js';
-
-// console.log('You are using react-source-debugger cli.');
-
-// // console.log('pwd, dirname ', process.cwd(), '\n', __dirname);
-
-// init(
-//   'react-debug',
-//   '/Users/liangjianwen/Desktop/workspace/test/react',
-//   '/Users/liangjianwen/Desktop/workspace/test/react-debug-demo2'
-// );

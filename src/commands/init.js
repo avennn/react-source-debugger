@@ -170,14 +170,19 @@ async function prepareReact(reactDir, reactVesion) {
 // reactPath: /Users/liangjianwen/Desktop/workspace/test/react
 // projectPath: /Users/liangjianwen/Desktop/workspace/test/react-debug-demo2
 export default async function init(options) {
-  const { config: targetConfig } = options;
+  try {
+    const { config: targetConfig } = options;
 
-  // allow rsd.config.{json,js,cjs,mjs}
-  const config = await finalizeConfig(targetConfig);
-  // TODO: check validation of config
-  console.log('Running with config: ', config);
+    // allow rsd.config.{json,js,cjs,mjs}
+    const config = await finalizeConfig(targetConfig);
+    // TODO: check validation of config
+    console.log('Running with config: ', config);
 
-  const reactDir = await prepareReact(config.reactDir, config.reactVersion);
+    const reactDir = await prepareReact(config.reactDir, config.reactVersion);
+  } catch (e) {
+    console.error(chalk.redBright(e.message));
+    process.exit(1);
+  }
 
   // const workspacePath = path.join(process.cwd(), `${name}.code-workspace`);
 

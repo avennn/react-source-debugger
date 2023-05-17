@@ -1,5 +1,6 @@
 import path from 'node:path';
 import shell from 'shelljs';
+import chalk from 'chalk';
 import { isFileOrDirExisted } from '../file.js';
 import { projectRoot } from '../constants.js';
 
@@ -12,7 +13,7 @@ export default function create(projectName) {
     shell.mkdir('-p', projectName);
     shell.cp(path.join(projectRoot, './templates/rsd.config.js'), cwd);
   } catch (e) {
-    console.error(e.message);
+    console.error(chalk.redBright(e.message));
     process.exit(1);
   }
 }
