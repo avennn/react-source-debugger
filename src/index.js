@@ -1,51 +1,54 @@
+#! /usr/bin/env node
+
 import fs from 'node:fs';
 import path from 'node:path';
-import process from 'node:process';
-import {
-  createVscodeWorkspace,
-  syncReactVersion,
-  getDirName,
-} from './utils.js';
-import shell from 'shelljs';
-import { cd, uncd } from './shell/index.js';
+import { createRequire } from 'node:module';
+import { Command } from 'commander';
+import { getDirName } from './utils.js';
+import { create, init } from './commands/index.js';
 
-function installDeps() {
-  const childProc = shell.exec('yarn install --frozen-lockfile', {
-    async: true,
-  });
-  child.stdout.on('data', (data) => {
-    /* ... do something with data ... */
-  });
-}
+const require = createRequire(import.meta.url);
+const { safeJsonParse } = require('tori');
 
-// reactPath: /Users/liangjianwen/Desktop/workspace/test/react
-// projectPath: /Users/liangjianwen/Desktop/workspace/test/react-debug-demo2
-export async function start(name, reactPath, projectPath) {
-  const workspacePath = path.join(process.cwd(), `${name}.code-workspace`);
-
-  shell.rm(workspacePath);
-
-  // TODO: name可以使用uuid自动生成
-  // TODO: code命令行工具自动打开
-  createVscodeWorkspace(workspacePath, [reactPath, projectPath]);
-
-  // 同步react版本
-  const version = await syncReactVersion(reactPath, projectPath);
-
-  cd(reactPath);
-  // 安装依赖
-  // shell.exec('yarn install --frozen-lockfile');
-  // 修改文件
-  // TODO: 小心文件路径的变化
-  const curFileDir = getDirName(import.meta.url);
-  const templatePath = path.join(
-    curFileDir,
-    `../templates/react/${version}/build.js`
+try {
+  const pkgJsonText = fs.readFileSync(
+    path.join(getDirName(import.meta.url), '../package.json'),
+    {
+      encoding: 'utf8',
+    }
   );
+  const { version } = safeJsonParse(pkgJsonText, {});
 
-  shell.cp(templatePath, `${reactPath}/scripts/rollup`);
-  // 构建
-  shell.exec('yarn build');
+  const program = new Command();
+  program.version(version, '-v, --version');
+  program
+    .command('create')
+    .description('Create a react source debug project.')
+    .argument('<project name>', 'project name')
+    .action((name) => {
+      create(name);
+    });
+  program
+    .command('init')
+    .description('Initialize react and demo project based on react.')
+    .option('--config', 'config file path')
+    .action((options) => {
+      init(options);
+    });
 
-  uncd();
+  program.parse();
+} catch (e) {
+  console.error(e);
 }
+
+// import { init } from './index.js';
+
+// console.log('You are using react-source-debugger cli.');
+
+// // console.log('pwd, dirname ', process.cwd(), '\n', __dirname);
+
+// init(
+//   'react-debug',
+//   '/Users/liangjianwen/Desktop/workspace/test/react',
+//   '/Users/liangjianwen/Desktop/workspace/test/react-debug-demo2'
+// );
