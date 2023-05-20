@@ -1,4 +1,4 @@
-import fs from 'node:fs';
+import fs from 'node:fs/promises';
 import path, { resolve } from 'node:path';
 import { createRequire } from 'node:module';
 import {
@@ -7,10 +7,7 @@ import {
   getDirName,
 } from '../utils.js';
 import shell from 'shelljs';
-import git from 'isomorphic-git';
-import gitHttp from 'isomorphic-git/http/node/index.js';
 import chalk from 'chalk';
-import { cd, uncd } from '../shell/index.js';
 import { isFileOrDirExisted } from '../file.js';
 import {
   shallowClone,
@@ -18,6 +15,7 @@ import {
   listTags,
   fetchRemoteTag,
 } from '../git/index.js';
+import { projectRoot } from '../constants.js';
 
 const require = createRequire(import.meta.url);
 
@@ -80,7 +78,7 @@ async function loadConfig(target) {
   }
   if (configFile.endsWith('.js')) {
     // duck type check
-    const config = fs.readFileSync(configFile, { encoding: 'utf-8' });
+    const config = await fs.readFile(configFile, { encoding: 'utf-8' });
     if (config.indexOf('module.exports') > -1) {
       return loadWithCjs(configFile);
     }
@@ -146,23 +144,48 @@ function fetchReactRemoteTag({ dir, ref }) {
   });
 }
 
-async function prepareReact(reactDir, reactVesion) {
-  const tag = `v${reactVesion}`;
+async function copyReactBuildResult(reactDir, reactVersion) {
+  const dir = path.join(projectRoot, `data/react/${reactVersion}`);
+  if (!isFileOrDirExisted(dir)) {
+    throw new Error(
+      `No built result of version ${reactVersion}. Please contace author.`
+    );
+  }
+  const files = await fs.readdir(dir, { withFileTypes: true });
+  files
+    .filter((item) => item.isDirectory())
+    .forEach((item) => {
+      // Be careful
+      shell.rm('-rf', path.join(reactDir, path.basename(item.name)));
+    });
+  shell.cp('-R', `${dir}/*`, reactDir);
+}
+
+async function prepareReact(reactDir, reactVersion) {
+  const tag = `v${reactVersion}`;
 
   if (!reactDir) {
-    console.log(chalk.greenBright('Cloning react...'));
+    console.log(chalk.bgYellow('Cloning react...'));
 
     reactDir = path.join(process.cwd(), 'react');
     await gitCloneReact({ dir: reactDir, ref: tag });
 
-    console.log(chalk.greenBright('Clone react done!'));
+    console.log(chalk.bgGreen('Clone react finished!'));
   } else {
+    console.log(chalk.bgYellow('Checking out...'));
+
     const tags = await listTags({ dir: reactDir });
     if (!tags.includes(tag)) {
       await fetchReactRemoteTag({ dir: reactDir, ref: tag });
     }
     await checkout({ dir: reactDir, ref: tag });
+
+    console.log(chalk.bgGreen('Check out finished!'));
   }
+
+  console.log(chalk.bgYellow('Coping react build...'));
+  copyReactBuildResult(reactDir, reactVersion);
+  console.log(chalk.bgGreen('Copy react build finished'));
 
   return reactDir;
 }
