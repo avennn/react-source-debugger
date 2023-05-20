@@ -162,6 +162,11 @@ decompress-response@^6.0.0:
   dependencies:
     mimic-response "^3.1.0"
 
+deepmerge@^4.3.1:
+  version "4.3.1"
+  resolved "https://registry.npmjs.org/deepmerge/-/deepmerge-4.3.1.tgz#44b5f2147cd3b00d4b56137685966f26fd25dd4a"
+  integrity sha512-3sUqbMEc77XqpdNO7FRyRog+eW3ph+GYCbj+rK+uYyRMuwsVy0rMiVtPn+QJlKFvWP/1PYpapqYn0Me2knFn+A==
+
 diff-sequences@^26.6.2:
   version "26.6.2"
   resolved "https://registry.npmjs.org/diff-sequences/-/diff-sequences-26.6.2.tgz#48ba99157de1923412eed41db6b6d4aa9ca7c0b1"

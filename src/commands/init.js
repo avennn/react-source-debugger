@@ -8,6 +8,7 @@ import {
 } from '../utils.js';
 import shell from 'shelljs';
 import chalk from 'chalk';
+import deepMerge from 'deepmerge';
 import { isFileOrDirExisted } from '../file.js';
 import {
   shallowClone,
@@ -89,14 +90,17 @@ async function loadConfig(target) {
 
 async function finalizeConfig(target) {
   const config = await loadConfig(target);
-  // const cwd = process.cwd();
   const defaultConfig = {
-    // reactDir: path.join(cwd, 'react'),
-    // projectDir: path.join(cwd, 'my-react-app'),
     // TODO: auto set as the newest version
-    reactVersion: '18.2.0',
+    react: {
+      version: '18.2.0',
+    },
+    testProject: {},
   };
-  return Object.assign(defaultConfig, config);
+  return deepMerge(defaultConfig, {
+    react: config.react || {},
+    testProject: config.testProject || {},
+  });
 }
 
 function gitCloneReact({ dir, ref }) {
@@ -201,7 +205,8 @@ export default async function init(options) {
     // TODO: check validation of config
     console.log('Running with config: ', config);
 
-    const reactDir = await prepareReact(config.reactDir, config.reactVersion);
+    const { react, testProject } = config;
+    const reactDir = await prepareReact(react.dir, react.version);
   } catch (e) {
     console.error(chalk.redBright(e.message));
     process.exit(1);
