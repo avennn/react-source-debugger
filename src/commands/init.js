@@ -177,20 +177,20 @@ async function initProjectWithCra({ baseDir, projectName, useTs }) {
   uncd();
 }
 
-async function initProjectWithVite({ baseDir, projectName, useTs, reactMode, reactDir, reactVersion, devPort }) {
+async function initProjectWithVite({ projectDir, useTs, reactMode, reactDir, reactVersion, devPort }) {
   function createAlias() {
     const baseDir = path.join(reactDir, 'build/node_modules');
+    const isDev = reactMode === 'development';
     return {
       'react/jsx-dev-runtime': path.join(baseDir, 'react/jsx-dev-runtime.js'),
       'react-dom/client': path.join(baseDir, 'react-dom/client.js'),
-      'react-dom': path.join(baseDir, `react-dom/cjs/react-dom.${reactMode}.js`),
-      react: path.join(baseDir, `react/cjs/react.${reactMode}.js`),
+      'react-dom': path.join(baseDir, `react-dom/cjs/react-dom.${isDev ? 'development' : 'production.min'}.js`),
+      react: path.join(baseDir, `react/cjs/react.${isDev ? 'development' : 'production.min'}.js`),
     };
   }
 
   const [majorVersion] = reactVersion.split('.');
   const dirName = `react${majorVersion}${useTs ? '-ts' : ''}`;
-  const projectDir = path.join(baseDir, projectName);
   if (!isFileOrDirExisted(projectDir)) {
     shell.mkdir('-p', projectDir);
   }
@@ -220,7 +220,7 @@ async function initProjectWithVite({ baseDir, projectName, useTs, reactMode, rea
 }
 
 async function prepareTestProject({ scaffold, dir, useTs, reactMode, reactVersion, devPort, reactDir }) {
-  let port = await getAvailablePort(devPort || 3000);
+  const port = await getAvailablePort(devPort);
 
   if (!dir) {
     const baseDir = process.cwd();
@@ -241,8 +241,7 @@ async function prepareTestProject({ scaffold, dir, useTs, reactMode, reactVersio
         break;
       default:
         await initProjectWithVite({
-          baseDir,
-          projectName: defaultProjectName,
+          projectDir: dir,
           useTs,
           reactMode,
           reactDir,
