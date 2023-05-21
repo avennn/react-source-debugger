@@ -1,16 +1,7 @@
 import path from 'node:path';
 import { spawn } from 'child_process';
 import { URL, fileURLToPath } from 'node:url';
-import { tagCommitCollection } from './data.js';
 import detectPort from 'detect-port';
-
-export function tag2Commit(tag) {
-  const collect = tagCommitCollection.find((item) => item[0] === tag);
-  if (collect) {
-    return collect[1];
-  }
-  return '';
-}
 
 export function getDirName(p) {
   let file = p;
