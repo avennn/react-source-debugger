@@ -1,6 +1,6 @@
 #! /usr/bin/env node
 
-import fs from 'node:fs';
+import fs from 'node:fs/promises';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { Command } from 'commander';
@@ -12,12 +12,9 @@ const require = createRequire(import.meta.url);
 const { safeJsonParse } = require('tori');
 
 try {
-  const pkgJsonText = fs.readFileSync(
-    path.join(getDirName(import.meta.url), '../package.json'),
-    {
-      encoding: 'utf8',
-    }
-  );
+  const pkgJsonText = await fs.readFile(path.join(getDirName(import.meta.url), '../package.json'), {
+    encoding: 'utf8',
+  });
   const { version } = safeJsonParse(pkgJsonText, {});
 
   const program = new Command();
