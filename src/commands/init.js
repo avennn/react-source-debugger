@@ -4,10 +4,15 @@ import { createRequire } from 'node:module';
 import shell from 'shelljs';
 import chalk from 'chalk';
 import deepMerge from 'deepmerge';
-import { isFileOrDirExisted, readFileAsJson, writeFileAsJson } from '../file.js';
+import {
+  isFileOrDirExisted,
+  readFileAsJson,
+  writeFileAsJson,
+  replaceFileContent,
+} from '../file.js';
 import { cd, uncd } from '../shell/index.js';
 import { shallowClone, checkout, listTags, fetchRemoteTag } from '../git/index.js';
-import { projectRoot, reactDataDir } from '../constants.js';
+import { projectRoot, reactDataDir, defaultProjectName } from '../constants.js';
 import { spawnRunCommand, getAvailablePort, compareVersion } from '../utils.js';
 
 const require = createRequire(import.meta.url);
@@ -72,15 +77,14 @@ async function loadConfig(target) {
 async function finalizeConfig(target) {
   const config = await loadConfig(target);
   const defaultConfig = {
-    // TODO: auto set as the newest version
     react: {
       version: '18.2.0',
-      mode: 'development', // development | production
     },
     testProject: {
       scaffold: 'vite',
-      useTs: true,
+      useTs: false,
       devPort: 3000,
+      mode: 'development', // production
     },
   };
   return deepMerge(defaultConfig, {
@@ -156,7 +160,7 @@ async function copyReactBuildResult(reactDir, reactVersion) {
 }
 
 async function gitCheckoutReact(dir, ref) {
-  console.log(chalk.bgYellow('Checking out...'));
+  console.log(chalk.cyan('Checking out...'));
 
   const tags = await listTags({ dir });
   if (!tags.includes(ref)) {
@@ -164,7 +168,7 @@ async function gitCheckoutReact(dir, ref) {
   }
   await checkout({ dir, ref });
 
-  console.log(chalk.bgGreen('Check out finished!'));
+  console.log(chalk.green('Checked out successfully!'));
 }
 
 async function prepareReact({ dir: reactDir, version: reactVersion, mode }) {
@@ -207,9 +211,9 @@ async function prepareReact({ dir: reactDir, version: reactVersion, mode }) {
     uncd();
   }
 
-  console.log(chalk.bgYellow('Coping react build...'));
+  console.log(chalk.cyan('Coping react build...'));
   await copyReactBuildResult(reactDir, matchedVersion);
-  console.log(chalk.bgGreen('Copy react build finished'));
+  console.log(chalk.green('Copied react build successfully!'));
 
   return reactDir;
 }
@@ -222,6 +226,19 @@ async function initProjectWithCRA({
   reactVersion,
   devPort,
 }) {
+  function createAlias() {
+    const baseDir = path.join(reactDir, 'build/node_modules');
+    return {
+      'react/jsx-dev-runtime': path.join(baseDir, 'react/jsx-dev-runtime.js'),
+      'react/jsx-runtime': path.join(baseDir, 'react/jsx-runtime.js'),
+      'react-dom/client': path.join(baseDir, 'react-dom/client.js'),
+      'react-dom': path.join(baseDir, 'react-dom/index.js'),
+      react: path.join(baseDir, 'react/index.js'),
+    };
+  }
+
+  console.log(chalk.cyan('Creating project with create-react-app.'));
+
   const [majorVersion] = reactVersion.split('.');
   const dirName = `react${majorVersion}${useTs ? '-ts' : ''}`;
   if (!isFileOrDirExisted(projectDir)) {
@@ -229,15 +246,36 @@ async function initProjectWithCRA({
   }
   shell.cp('-R', path.join(projectRoot, `templates/create-react-app/${dirName}/*`), projectDir);
 
-  // GENERATE_SOURCEMAP=true
+  // change files
+  // package.json scripts
+  const pkgJsonPath = path.join(projectDir, 'package.json');
+  const pkgJson = await readFileAsJson(pkgJsonPath);
+  Object.assign(pkgJson.scripts, {
+    start: `GENERATE_SOURCEMAP=true PORT=${devPort} node scripts/start.js`,
+  });
+  await writeFileAsJson(pkgJsonPath, pkgJson);
+  // webpack alias
+  const alias = createAlias();
+  await replaceFileContent(path.join(projectDir, 'config/webpack.config.js'), (content) => {
+    Object.keys(alias).forEach((key, i) => {
+      content = content.replaceAll(`$${i}`, alias[key]);
+    });
+    return content;
+  });
+  // start script
+  await replaceFileContent(path.join(projectDir, 'scripts/start.js'), (content) =>
+    content.replaceAll('$mode', reactMode)
+  );
 
   // install deps
   cd(projectDir);
   await spawnRunCommand('npm', ['install'], (data) => {
     console.log(data);
   });
-  console.log(`Please cd ${projectDir} and run "npm run start"`);
+  console.log(`Please cd ${projectDir} and run "npm start"`);
   uncd();
+
+  console.log(chalk.green('Created project with create-react-app successfully!'));
 }
 
 async function initProjectWithVite({
@@ -259,6 +297,8 @@ async function initProjectWithVite({
     };
   }
 
+  console.log(chalk.yellow('Creating project with vite.'));
+
   const [majorVersion] = reactVersion.split('.');
   const dirName = `react${majorVersion}${useTs ? '-ts' : ''}`;
   if (!isFileOrDirExisted(projectDir)) {
@@ -276,7 +316,7 @@ async function initProjectWithVite({
   const viteConfigPath = path.join(projectDir, `vite.config.${useTs ? 'ts' : 'js'}`);
   let viteConfig = await fs.readFile(viteConfigPath, { encoding: 'utf-8' });
   Object.keys(alias).forEach((key, i) => {
-    viteConfig = viteConfig.replace(`'$${i}'`, `'${alias[key]}'`);
+    viteConfig = viteConfig.replace(`$${i}`, alias[key]);
   });
   await fs.writeFile(viteConfigPath, viteConfig);
 
@@ -287,6 +327,8 @@ async function initProjectWithVite({
   });
   console.log(`Please cd ${projectDir} and run "npm run dev"`);
   uncd();
+
+  console.log(chalk.green('Created project with vite successfully!'));
 }
 
 async function prepareTestProject({
@@ -301,8 +343,11 @@ async function prepareTestProject({
 }) {
   const port = await getAvailablePort(devPort);
   if (!projectDir) {
-    const defaultProjectName = 'test-project';
     projectDir = path.join(cwd, defaultProjectName);
+
+    if (isFileOrDirExisted(projectDir)) {
+      throw new Error(`Already has ${defaultProjectName}. Please remove it and re-init.`);
+    }
 
     switch (scaffold) {
       case 'create-react-app':
@@ -344,6 +389,11 @@ async function createVscodeWorkspace(wsDir, { reactDir, testProjectDir, devPort 
           url: `http://localhost:${devPort}`,
           webRoot: '${workspaceFolder}',
           sourceMaps: true,
+          // "webRoot": "${workspaceFolder}/react",
+          // "sourceMaps": true,
+          // "sourceMapPathOverrides": {
+          //   "*": "${webRoot}/*"
+          // }
         },
       ],
     },
@@ -365,10 +415,10 @@ export default async function init(options) {
     console.log('Running with config: ', config);
 
     const { react, testProject } = config;
-    const reactDir = await prepareReact(react);
+    const reactDir = await prepareReact({ ...react, mode: testProject.mode });
     const { testProjectDir, devPort } = await prepareTestProject({
       ...testProject,
-      reactMode: react.mode,
+      reactMode: testProject.mode,
       reactVersion: react.version,
       reactDir,
       cwd,

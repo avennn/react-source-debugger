@@ -319,6 +319,11 @@ module.exports = function (webpackEnv) {
           'scheduler/tracing': 'scheduler/tracing-profiling',
         }),
         ...(modules.webpackAliases || {}),
+        'react/jsx-dev-runtime': '$0',
+        'react/jsx-runtime': '$1',
+        'react-dom/client': '$2',
+        'react-dom': '$3',
+        react: '$4',
       },
       plugins: [
         // Prevents users from importing files from outside of src/ (or node_modules/).
@@ -333,6 +338,11 @@ module.exports = function (webpackEnv) {
           babelRuntimeEntry,
           babelRuntimeEntryHelpers,
           babelRuntimeRegenerator,
+          '$0',
+          '$1',
+          '$2',
+          '$3',
+          '$4',
         ]),
       ],
     },
