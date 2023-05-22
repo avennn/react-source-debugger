@@ -30,7 +30,9 @@ function lookupConfigFile(target) {
   }
 
   const exts = ['js', 'cjs', 'mjs', 'json'];
-  const configFile = exts.map((ext) => path.join(cwd, `rsd.config.${ext}`)).find((p) => isFileOrDirExisted(p));
+  const configFile = exts
+    .map((ext) => path.join(cwd, `rsd.config.${ext}`))
+    .find((p) => isFileOrDirExisted(p));
 
   if (!configFile) {
     throw new Error(`Make sure you have a rsd config file under directory: ${cwd}`);
@@ -117,7 +119,9 @@ async function gitFetchReactRemoteTag({ dir, ref }) {
       },
     });
   } catch (e) {
-    throw new Error(`Fail to fetch react tag ${ref} from remote. code: ${e.code}, signal: ${e.signal}.`);
+    throw new Error(
+      `Fail to fetch react tag ${ref} from remote. code: ${e.code}, signal: ${e.signal}.`
+    );
   }
 }
 
@@ -169,22 +173,48 @@ async function prepareReact({ dir: reactDir, version: reactVersion }) {
   return reactDir;
 }
 
-async function initProjectWithCra({ baseDir, projectName, useTs }) {
-  cd(baseDir);
-  await spawnRunCommand('npx', ['create-react-app@5.0.1', projectName], (data) => {
+async function initProjectWithCRA({
+  projectDir,
+  useTs,
+  reactMode,
+  reactDir,
+  reactVersion,
+  devPort,
+}) {
+  const [majorVersion] = reactVersion.split('.');
+  const dirName = `react${majorVersion}${useTs ? '-ts' : ''}`;
+  if (!isFileOrDirExisted(projectDir)) {
+    shell.mkdir('-p', projectDir);
+  }
+  shell.cp('-R', path.join(projectRoot, `templates/create-react-app/${dirName}/*`), projectDir);
+
+  // install deps
+  cd(projectDir);
+  await spawnRunCommand('npm', ['install'], (data) => {
     console.log(data);
   });
+  console.log(`Please cd ${projectDir} and run "npm run start"`);
   uncd();
 }
 
-async function initProjectWithVite({ projectDir, useTs, reactMode, reactDir, reactVersion, devPort }) {
+async function initProjectWithVite({
+  projectDir,
+  useTs,
+  reactMode,
+  reactDir,
+  reactVersion,
+  devPort,
+}) {
   function createAlias() {
     const baseDir = path.join(reactDir, 'build/node_modules');
     const isDev = reactMode === 'development';
     return {
       'react/jsx-dev-runtime': path.join(baseDir, 'react/jsx-dev-runtime.js'),
       'react-dom/client': path.join(baseDir, 'react-dom/client.js'),
-      'react-dom': path.join(baseDir, `react-dom/cjs/react-dom.${isDev ? 'development' : 'production.min'}.js`),
+      'react-dom': path.join(
+        baseDir,
+        `react-dom/cjs/react-dom.${isDev ? 'development' : 'production.min'}.js`
+      ),
       react: path.join(baseDir, `react/cjs/react.${isDev ? 'development' : 'production.min'}.js`),
     };
   }
@@ -219,7 +249,15 @@ async function initProjectWithVite({ projectDir, useTs, reactMode, reactDir, rea
   uncd();
 }
 
-async function prepareTestProject({ scaffold, dir, useTs, reactMode, reactVersion, devPort, reactDir }) {
+async function prepareTestProject({
+  scaffold,
+  dir,
+  useTs,
+  reactMode,
+  reactVersion,
+  devPort,
+  reactDir,
+}) {
   const port = await getAvailablePort(devPort);
 
   if (!dir) {
@@ -229,9 +267,8 @@ async function prepareTestProject({ scaffold, dir, useTs, reactMode, reactVersio
 
     switch (scaffold) {
       case 'create-react-app':
-        await initProjectWithCra({
-          baseDir,
-          projectName: defaultProjectName,
+        await initProjectWithCRA({
+          projectDir: dir,
           useTs,
           reactMode,
           reactDir,
