@@ -46,3 +46,22 @@ export async function getAvailablePort(defaultPort) {
     return defaultPort;
   }
 }
+
+export function compareVersion(v1, v2) {
+  const list1 = v1.split('.');
+  const list2 = v2.split('.');
+  const len = Math.max(list1.length, list2.length);
+  let i = 0;
+  while (i < len) {
+    const a = parseInt(list1[i]) || 0;
+    const b = parseInt(list2[i]) || 0;
+    if (a < b) {
+      return -1;
+    }
+    if (a > b) {
+      return 1;
+    }
+    i++;
+  }
+  return 0;
+}

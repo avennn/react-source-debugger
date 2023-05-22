@@ -32,7 +32,7 @@ CPPFLAGS="-DPNG_ARM_NEON_OPT=0" yarn install --frozen-lockfile
 - [ ] CRA react16
 - [x] vite react18-ts
 - [x] vite react18
-- [ ] vite react17-ts
-- [ ] vite react17
+- [x] vite react17-ts
+- [x] vite react17
 - [ ] vite react16-ts
 - [ ] vite react16

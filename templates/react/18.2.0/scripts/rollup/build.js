@@ -197,7 +197,6 @@ function getRollupOutputOptions(
     freeze: !isProduction,
     interop: false,
     name: globalName,
-    // 开启sourcemap
     sourcemap: true,
     esModule: false,
   };

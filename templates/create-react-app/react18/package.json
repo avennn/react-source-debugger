@@ -58,7 +58,7 @@
     "workbox-webpack-plugin": "^6.4.1"
   },
   "scripts": {
-    "start": "GENERATE_SOURCEMAP=true PORT=3000 node scripts/start.js",
+    "start": "PORT=3000 node scripts/start.js",
     "build": "node scripts/build.js",
     "test": "node scripts/test.js"
   },

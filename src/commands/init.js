@@ -7,8 +7,8 @@ import deepMerge from 'deepmerge';
 import { isFileOrDirExisted, readFileAsJson, writeFileAsJson } from '../file.js';
 import { cd, uncd } from '../shell/index.js';
 import { shallowClone, checkout, listTags, fetchRemoteTag } from '../git/index.js';
-import { projectRoot } from '../constants.js';
-import { spawnRunCommand, getAvailablePort } from '../utils.js';
+import { projectRoot, reactDataDir } from '../constants.js';
+import { spawnRunCommand, getAvailablePort, compareVersion } from '../utils.js';
 
 const require = createRequire(import.meta.url);
 
@@ -75,10 +75,10 @@ async function finalizeConfig(target) {
     // TODO: auto set as the newest version
     react: {
       version: '18.2.0',
+      mode: 'development', // development | production
     },
     testProject: {
       scaffold: 'vite',
-      reactMode: 'development', // development | production
       useTs: true,
       devPort: 3000,
     },
@@ -125,11 +125,26 @@ async function gitFetchReactRemoteTag({ dir, ref }) {
   }
 }
 
-async function copyReactBuildResult(reactDir, reactVersion) {
-  const dir = path.join(projectRoot, `data/react/${reactVersion}`);
-  if (!isFileOrDirExisted(dir)) {
-    throw new Error(`No built result of version ${reactVersion}. Please contace author.`);
+async function matchNearestVersion(target) {
+  const files = await fs.readdir(reactDataDir, { withFileTypes: true });
+  const versions = files
+    .filter((item) => item.isDirectory())
+    .map((item) => path.basename(item.name))
+    .filter((item) => item.split('.')[0] === target.split('.')[0])
+    .sort((a, b) => compareVersion(a, b) === -1);
+  // find equal or larger one, fallback the largest one in version list.
+  let j = versions.length - 1;
+  for (let i = 0; i < versions.length; i++) {
+    if (compareVersion(versions[i], target) >= 0) {
+      j = i;
+      break;
+    }
   }
+  return versions[j];
+}
+
+async function copyReactBuildResult(reactDir, reactVersion) {
+  const dir = path.join(reactDataDir, reactVersion);
   const files = await fs.readdir(dir, { withFileTypes: true });
   files
     .filter((item) => item.isDirectory())
@@ -140,34 +155,60 @@ async function copyReactBuildResult(reactDir, reactVersion) {
   shell.cp('-R', `${dir}/*`, reactDir);
 }
 
-async function prepareReact({ dir: reactDir, version: reactVersion }) {
-  const tag = `v${reactVersion}`;
+async function gitCheckoutReact(dir, ref) {
+  console.log(chalk.bgYellow('Checking out...'));
+
+  const tags = await listTags({ dir });
+  if (!tags.includes(ref)) {
+    await gitFetchReactRemoteTag({ dir, ref });
+  }
+  await checkout({ dir, ref });
+
+  console.log(chalk.bgGreen('Check out finished!'));
+}
+
+async function prepareReact({ dir: reactDir, version: reactVersion, mode }) {
+  const matchedVersion = await matchNearestVersion(reactVersion);
+
+  if (matchedVersion !== reactVersion) {
+    console.log(
+      chalk.yellowBright(`Not support react v${reactVersion}. Using v${matchedVersion} instead.`)
+    );
+  }
+
+  const tag = `v${matchedVersion}`;
 
   if (!reactDir) {
-    console.log(chalk.bgYellow('Cloning react...'));
-
     reactDir = path.join(process.cwd(), 'react');
     if (!isFileOrDirExisted(reactDir)) {
+      console.log(chalk.bgYellow('Cloning react...'));
       await gitCloneReact({ dir: reactDir, ref: tag });
+      console.log(chalk.bgGreen('Clone react finished!'));
     } else {
-      console.log(chalk.yellowBright('Warning: aleady has react.'));
+      console.log(chalk.yellowBright('Already has react. Skip clone phase.'));
+      await gitCheckoutReact(reactDir, tag);
     }
-
-    console.log(chalk.bgGreen('Clone react finished!'));
   } else {
-    console.log(chalk.bgYellow('Checking out...'));
+    await gitCheckoutReact(reactDir, tag);
+  }
 
-    const tags = await listTags({ dir: reactDir });
-    if (!tags.includes(tag)) {
-      await gitFetchReactRemoteTag({ dir: reactDir, ref: tag });
-    }
-    await checkout({ dir: reactDir, ref: tag });
-
-    console.log(chalk.bgGreen('Check out finished!'));
+  // since react17 react16 production reguire "object-assign", we need to install deps
+  if (['16', '17'].includes(matchedVersion.split('.')[0]) && mode === 'production') {
+    console.log(chalk.yellow(`Installing react v${matchedVersion} deps.`));
+    cd(reactDir);
+    await spawnRunCommand(
+      'yarn',
+      ['--frozen-lockfile', '--ignore-scripts', '--production=true'],
+      (data) => {
+        console.log(data);
+      }
+    );
+    console.log(chalk.green(`Installed react v${matchedVersion} deps successfully!`));
+    uncd();
   }
 
   console.log(chalk.bgYellow('Coping react build...'));
-  copyReactBuildResult(reactDir, reactVersion);
+  await copyReactBuildResult(reactDir, matchedVersion);
   console.log(chalk.bgGreen('Copy react build finished'));
 
   return reactDir;
@@ -188,6 +229,8 @@ async function initProjectWithCRA({
   }
   shell.cp('-R', path.join(projectRoot, `templates/create-react-app/${dirName}/*`), projectDir);
 
+  // GENERATE_SOURCEMAP=true
+
   // install deps
   cd(projectDir);
   await spawnRunCommand('npm', ['install'], (data) => {
@@ -207,15 +250,12 @@ async function initProjectWithVite({
 }) {
   function createAlias() {
     const baseDir = path.join(reactDir, 'build/node_modules');
-    const isDev = reactMode === 'development';
     return {
       'react/jsx-dev-runtime': path.join(baseDir, 'react/jsx-dev-runtime.js'),
+      'react/jsx-runtime': path.join(baseDir, 'react/jsx-runtime.js'),
       'react-dom/client': path.join(baseDir, 'react-dom/client.js'),
-      'react-dom': path.join(
-        baseDir,
-        `react-dom/cjs/react-dom.${isDev ? 'development' : 'production.min'}.js`
-      ),
-      react: path.join(baseDir, `react/cjs/react.${isDev ? 'development' : 'production.min'}.js`),
+      'react-dom': path.join(baseDir, 'react-dom/index.js'),
+      react: path.join(baseDir, 'react/index.js'),
     };
   }
 
@@ -229,7 +269,7 @@ async function initProjectWithVite({
   // change files
   const pkgJsonPath = path.join(projectDir, 'package.json');
   const pkgJson = await readFileAsJson(pkgJsonPath);
-  Object.assign(pkgJson.scripts, { dev: `vite --port ${devPort}` });
+  Object.assign(pkgJson.scripts, { dev: `NODE_ENV=${reactMode} vite --port ${devPort}` });
   await writeFileAsJson(pkgJsonPath, pkgJson);
 
   const alias = createAlias();
@@ -251,24 +291,23 @@ async function initProjectWithVite({
 
 async function prepareTestProject({
   scaffold,
-  dir,
+  dir: projectDir,
   useTs,
   reactMode,
   reactVersion,
   devPort,
   reactDir,
+  cwd,
 }) {
   const port = await getAvailablePort(devPort);
-
-  if (!dir) {
-    const baseDir = process.cwd();
+  if (!projectDir) {
     const defaultProjectName = 'test-project';
-    dir = path.join(baseDir, defaultProjectName);
+    projectDir = path.join(cwd, defaultProjectName);
 
     switch (scaffold) {
       case 'create-react-app':
         await initProjectWithCRA({
-          projectDir: dir,
+          projectDir,
           useTs,
           reactMode,
           reactDir,
@@ -278,7 +317,7 @@ async function prepareTestProject({
         break;
       default:
         await initProjectWithVite({
-          projectDir: dir,
+          projectDir,
           useTs,
           reactMode,
           reactDir,
@@ -289,7 +328,7 @@ async function prepareTestProject({
     }
   }
 
-  return { testProjectDir: dir, devPort: port };
+  return { testProjectDir: projectDir, devPort: port };
 }
 
 async function createVscodeWorkspace(wsDir, { reactDir, testProjectDir, devPort }) {
@@ -322,14 +361,17 @@ export default async function init(options) {
     // allow rsd.config.{json,js,cjs,mjs}
     const config = await finalizeConfig(targetConfig);
     // TODO: check validation of config
+    // TODO: check react version, only support 16, 17, 18
     console.log('Running with config: ', config);
 
     const { react, testProject } = config;
     const reactDir = await prepareReact(react);
     const { testProjectDir, devPort } = await prepareTestProject({
       ...testProject,
+      reactMode: react.mode,
       reactVersion: react.version,
       reactDir,
+      cwd,
     });
     await createVscodeWorkspace(cwd, {
       reactDir,

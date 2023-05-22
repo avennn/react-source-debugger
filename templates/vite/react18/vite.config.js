@@ -8,9 +8,10 @@ export default defineConfig({
   resolve: {
     alias: {
       'react/jsx-dev-runtime': '$0',
-      'react-dom/client': '$1',
-      'react-dom': '$2',
-      react: '$3',
+      'react/jsx-runtime': '$1',
+      'react-dom/client': '$2',
+      'react-dom': '$3',
+      react: '$4',
     }
   },
 })

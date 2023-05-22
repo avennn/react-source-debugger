@@ -9,7 +9,7 @@ export function isFileOrDirExisted(path) {
   try {
     fs.accessSync(path);
     return true;
-  } catch (e) {
+  } catch {
     return false;
   }
 }
