@@ -176,7 +176,7 @@ async function prepareReact({ dir: reactDir, version: reactVersion, mode }) {
 
   if (matchedVersion !== reactVersion) {
     console.log(
-      chalk.yellowBright(`Not support react v${reactVersion}. Using v${matchedVersion} instead.`)
+      chalk.yellow(`Not support react v${reactVersion}. Using v${matchedVersion} instead.`)
     );
   }
 
@@ -185,11 +185,11 @@ async function prepareReact({ dir: reactDir, version: reactVersion, mode }) {
   if (!reactDir) {
     reactDir = path.join(process.cwd(), 'react');
     if (!isFileOrDirExisted(reactDir)) {
-      console.log(chalk.bgYellow('Cloning react...'));
+      console.log(chalk.cyan('Cloning react...'));
       await gitCloneReact({ dir: reactDir, ref: tag });
-      console.log(chalk.bgGreen('Clone react finished!'));
+      console.log(chalk.green('Cloned react successfully!'));
     } else {
-      console.log(chalk.yellowBright('Already has react. Skip clone phase.'));
+      console.log(chalk.yellow('Already has react. Skip clone phase.'));
       await gitCheckoutReact(reactDir, tag);
     }
   } else {
@@ -198,7 +198,7 @@ async function prepareReact({ dir: reactDir, version: reactVersion, mode }) {
 
   // since react17 react16 production reguire "object-assign", we need to install deps
   if (['16', '17'].includes(matchedVersion.split('.')[0]) && mode === 'production') {
-    console.log(chalk.yellow(`Installing react v${matchedVersion} deps.`));
+    console.log(chalk.cyan(`Installing react v${matchedVersion} deps.`));
     cd(reactDir);
     await spawnRunCommand(
       'yarn',
@@ -297,7 +297,7 @@ async function initProjectWithVite({
     };
   }
 
-  console.log(chalk.yellow('Creating project with vite.'));
+  console.log(chalk.cyan('Creating project with vite.'));
 
   const [majorVersion] = reactVersion.split('.');
   const dirName = `react${majorVersion}${useTs ? '-ts' : ''}`;
@@ -389,11 +389,11 @@ async function createVscodeWorkspace(wsDir, { reactDir, testProjectDir, devPort 
           url: `http://localhost:${devPort}`,
           webRoot: '${workspaceFolder}',
           sourceMaps: true,
-          // "webRoot": "${workspaceFolder}/react",
-          // "sourceMaps": true,
-          // "sourceMapPathOverrides": {
-          //   "*": "${webRoot}/*"
-          // }
+          // webRoot: '${workspaceFolder}/react',
+          // sourceMaps: true,
+          // sourceMapPathOverrides: {
+          //   '*': '${webRoot}/*',
+          // },
         },
       ],
     },
