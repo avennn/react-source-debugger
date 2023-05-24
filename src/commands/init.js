@@ -376,26 +376,32 @@ async function prepareTestProject({
   return { testProjectDir: projectDir, devPort: port };
 }
 
-async function createVscodeWorkspace(wsDir, { reactDir, testProjectDir, devPort }) {
+async function createVscodeWorkspace(wsDir, { reactDir, testProjectDir, devPort, scaffold, mode }) {
+  // With vscode multi root workspace, projects show in stack as folders array order.
+  // We want to keep react at the top since it is helpful for debugging react source code.
+  // And ${workspaceFolder} equals to first folder path, so is react.
+  // We need to change it to testProject.
+  const relativePath = path.relative(reactDir, testProjectDir);
+  const configItem = {
+    type: 'chrome',
+    request: 'launch',
+    name: 'Launch Chrome against localhost',
+    url: `http://localhost:${devPort}`,
+    webRoot: '${workspaceFolder}/' + relativePath,
+    sourceMaps: true,
+  };
+  if (scaffold === 'create-react-app' && mode === 'production') {
+    Object.assign(configItem, {
+      sourceMapPathOverrides: {
+        '*': '${webRoot}/src/*',
+      },
+    });
+  }
   const config = {
     folders: [{ path: reactDir }, { path: testProjectDir }],
     launch: {
       version: '0.2.0',
-      configurations: [
-        {
-          type: 'chrome',
-          request: 'launch',
-          name: 'Launch Chrome against localhost',
-          url: `http://localhost:${devPort}`,
-          webRoot: '${workspaceFolder}',
-          sourceMaps: true,
-          // webRoot: '${workspaceFolder}/react',
-          // sourceMaps: true,
-          // sourceMapPathOverrides: {
-          //   '*': '${webRoot}/*',
-          // },
-        },
-      ],
+      configurations: [configItem],
     },
   };
   await fs.writeFile(path.join(wsDir, 'rsd.code-workspace'), JSON.stringify(config, null, 2));
@@ -427,6 +433,8 @@ export default async function init(options) {
       reactDir,
       testProjectDir,
       devPort,
+      scaffold: testProject.scaffold,
+      mode: testProject.mode,
     });
   } catch (e) {
     console.error(chalk.redBright(e.message));
