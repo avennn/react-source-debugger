@@ -24,8 +24,8 @@ CPPFLAGS="-DPNG_ARM_NEON_OPT=0" yarn install --frozen-lockfile
 
 ## TODO
 
-- [ ] CRA react18-ts
-- [ ] CRA react18
+- [x] CRA react18-ts
+- [x] CRA react18
 - [ ] CRA react17-ts
 - [ ] CRA react17
 - [ ] CRA react16-ts
