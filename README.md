@@ -21,18 +21,3 @@ Apple M1 芯片环境的不同，安装依赖时 optpng-bin 会报错，解决�
 ```sh
 CPPFLAGS="-DPNG_ARM_NEON_OPT=0" yarn install --frozen-lockfile
 ```
-
-## TODO
-
-- [x] CRA react18-ts
-- [x] CRA react18
-- [ ] CRA react17-ts
-- [ ] CRA react17
-- [ ] CRA react16-ts
-- [ ] CRA react16
-- [x] vite react18-ts
-- [x] vite react18
-- [x] vite react17-ts
-- [x] vite react17
-- [x] vite react16-ts
-- [x] vite react16
