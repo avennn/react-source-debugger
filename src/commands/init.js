@@ -222,14 +222,7 @@ async function prepareReact({ dir: reactDir, version: reactVersion, mode }) {
   return reactDir;
 }
 
-async function initProjectWithCRA({
-  projectDir,
-  useTs,
-  reactMode,
-  reactDir,
-  reactVersion,
-  devPort,
-}) {
+async function initProjectWithCRA({ projectDir, useTs, mode, reactDir, reactVersion, devPort }) {
   function createAlias() {
     const baseDir = path.join(reactDir, 'build/node_modules');
     return {
@@ -268,7 +261,7 @@ async function initProjectWithCRA({
   });
   // start script
   await replaceFileContent(path.join(projectDir, 'scripts/start.js'), (content) =>
-    content.replaceAll('$mode', reactMode)
+    content.replaceAll('$mode', mode)
   );
 
   // install deps
@@ -276,20 +269,14 @@ async function initProjectWithCRA({
   await spawnRunCommand('npm', ['install'], (data) => {
     console.log(data);
   });
-  console.log(`Please cd ${projectDir} and run "npm start"`);
   uncd();
 
   hint.success('Created project with create-react-app successfully!');
+
+  console.log(`Please cd ${projectDir} and run "npm start"`);
 }
 
-async function initProjectWithVite({
-  projectDir,
-  useTs,
-  reactMode,
-  reactDir,
-  reactVersion,
-  devPort,
-}) {
+async function initProjectWithVite({ projectDir, useTs, mode, reactDir, reactVersion, devPort }) {
   function createAlias() {
     const baseDir = path.join(reactDir, 'build/node_modules');
     return {
@@ -313,7 +300,7 @@ async function initProjectWithVite({
   // change files
   const pkgJsonPath = path.join(projectDir, 'package.json');
   const pkgJson = await readFileAsJson(pkgJsonPath);
-  Object.assign(pkgJson.scripts, { dev: `NODE_ENV=${reactMode} vite --port ${devPort}` });
+  Object.assign(pkgJson.scripts, { dev: `NODE_ENV=${mode} vite --port ${devPort}` });
   await writeFileAsJson(pkgJsonPath, pkgJson);
 
   const alias = createAlias();
@@ -329,17 +316,18 @@ async function initProjectWithVite({
   await spawnRunCommand('npm', ['install'], (data) => {
     console.log(data);
   });
-  console.log(`Please cd ${projectDir} and run "npm run dev"`);
   uncd();
 
   hint.success('Created project with vite successfully!');
+
+  console.log(`Please cd ${projectDir} and run "npm run dev"`);
 }
 
 async function prepareTestProject({
   scaffold,
   dir: projectDir,
   useTs,
-  reactMode,
+  mode,
   reactVersion,
   devPort,
   reactDir,
@@ -353,26 +341,21 @@ async function prepareTestProject({
       throw new Error(`Already has ${defaultProjectName}. Please remove it and re-init.`);
     }
 
+    const info = {
+      projectDir,
+      useTs,
+      mode,
+      reactDir,
+      reactVersion,
+      devPort: port,
+    };
+
     switch (scaffold) {
       case 'create-react-app':
-        await initProjectWithCRA({
-          projectDir,
-          useTs,
-          reactMode,
-          reactDir,
-          reactVersion,
-          devPort: port,
-        });
+        await initProjectWithCRA(info);
         break;
       default:
-        await initProjectWithVite({
-          projectDir,
-          useTs,
-          reactMode,
-          reactDir,
-          reactVersion,
-          devPort: port,
-        });
+        await initProjectWithVite(info);
         break;
     }
   }
@@ -428,7 +411,6 @@ export default async function init(options) {
     const reactDir = await prepareReact({ ...react, mode: testProject.mode });
     const { testProjectDir, devPort } = await prepareTestProject({
       ...testProject,
-      reactMode: testProject.mode,
       reactVersion: react.version,
       reactDir,
       cwd,
