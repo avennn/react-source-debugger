@@ -1,6 +1,6 @@
 {
   "name": "react-source-debugger",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "A debugger for learning React source code",
   "main": "src/index.js",
   "type": "module",
@@ -18,8 +18,7 @@
     }
   },
   "scripts": {
-    "test": "yarn global add /Users/liangjianwen/Desktop/workspace/projects/react-source-debugger",
-    "test2": "cp src/bin.js /Users/liangjianwen/.yarn/bin/rsd"
+    "postpublish": "node scripts/post-publish.js"
   },
   "repository": {
     "type": "git",
