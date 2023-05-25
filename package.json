@@ -48,9 +48,6 @@
     "commander": "^10.0.1",
     "deepmerge": "^4.3.1",
     "detect-port": "^1.5.1",
-    "execa": "^7.1.1",
-    "github-api": "^3.4.0",
-    "isomorphic-git": "^1.23.0",
     "shelljs": "^0.8.5",
     "tori": "^2.0.0"
   }
