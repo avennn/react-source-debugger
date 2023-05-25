@@ -4,17 +4,13 @@ import { createRequire } from 'node:module';
 import shell from 'shelljs';
 import chalk from 'chalk';
 import deepMerge from 'deepmerge';
-import {
-  isFileOrDirExisted,
-  readFileAsJson,
-  writeFileAsJson,
-  replaceFileContent,
-} from '../file.js';
+import { isFileOrDirExisted } from '../file.js';
 import { cd, uncd } from '../shell/index.js';
 import { shallowClone, checkout, listTags, fetchRemoteTag } from '../git/index.js';
-import { projectRoot, reactDataDir, defaultProjectName } from '../constants.js';
+import { reactDataDir, defaultProjectName } from '../constants.js';
 import { spawnRunCommand, getAvailablePort, compareVersion } from '../utils.js';
 import hint from '../hint.js';
+import { ScaffoldVite, ScaffoldCRA } from '../scaffold-adapters/index.js';
 
 const require = createRequire(import.meta.url);
 
@@ -222,107 +218,6 @@ async function prepareReact({ dir: reactDir, version: reactVersion, mode }) {
   return reactDir;
 }
 
-async function initProjectWithCRA({ projectDir, useTs, mode, reactDir, reactVersion, devPort }) {
-  function createAlias() {
-    const baseDir = path.join(reactDir, 'build/node_modules');
-    return {
-      'react/jsx-dev-runtime': path.join(baseDir, 'react/jsx-dev-runtime.js'),
-      'react/jsx-runtime': path.join(baseDir, 'react/jsx-runtime.js'),
-      'react-dom/client': path.join(baseDir, 'react-dom/client.js'),
-      'react-dom': path.join(baseDir, 'react-dom/index.js'),
-      react: path.join(baseDir, 'react/index.js'),
-    };
-  }
-
-  hint.doing('Creating project with create-react-app.');
-
-  const [majorVersion] = reactVersion.split('.');
-  const dirName = `react${majorVersion}${useTs ? '-ts' : ''}`;
-  if (!isFileOrDirExisted(projectDir)) {
-    shell.mkdir('-p', projectDir);
-  }
-  shell.cp('-R', path.join(projectRoot, `templates/create-react-app/${dirName}/*`), projectDir);
-
-  // change files
-  // package.json scripts
-  const pkgJsonPath = path.join(projectDir, 'package.json');
-  const pkgJson = await readFileAsJson(pkgJsonPath);
-  Object.assign(pkgJson.scripts, {
-    start: `GENERATE_SOURCEMAP=true PORT=${devPort} node scripts/start.js`,
-  });
-  await writeFileAsJson(pkgJsonPath, pkgJson);
-  // webpack alias
-  const alias = createAlias();
-  await replaceFileContent(path.join(projectDir, 'config/webpack.config.js'), (content) => {
-    Object.keys(alias).forEach((key, i) => {
-      content = content.replaceAll(`$${i}`, alias[key]);
-    });
-    return content;
-  });
-  // start script
-  await replaceFileContent(path.join(projectDir, 'scripts/start.js'), (content) =>
-    content.replaceAll('$mode', mode)
-  );
-
-  // install deps
-  cd(projectDir);
-  await spawnRunCommand('npm', ['install'], (data) => {
-    console.log(data);
-  });
-  uncd();
-
-  hint.success('Created project with create-react-app successfully!');
-
-  console.log(`Please cd ${projectDir} and run "npm start"`);
-}
-
-async function initProjectWithVite({ projectDir, useTs, mode, reactDir, reactVersion, devPort }) {
-  function createAlias() {
-    const baseDir = path.join(reactDir, 'build/node_modules');
-    return {
-      'react/jsx-dev-runtime': path.join(baseDir, 'react/jsx-dev-runtime.js'),
-      'react/jsx-runtime': path.join(baseDir, 'react/jsx-runtime.js'),
-      'react-dom/client': path.join(baseDir, 'react-dom/client.js'),
-      'react-dom': path.join(baseDir, 'react-dom/index.js'),
-      react: path.join(baseDir, 'react/index.js'),
-    };
-  }
-
-  hint.doing('Creating project with vite.');
-
-  const [majorVersion] = reactVersion.split('.');
-  const dirName = `react${majorVersion}${useTs ? '-ts' : ''}`;
-  if (!isFileOrDirExisted(projectDir)) {
-    shell.mkdir('-p', projectDir);
-  }
-  shell.cp('-R', path.join(projectRoot, `templates/vite/${dirName}/*`), projectDir);
-
-  // change files
-  const pkgJsonPath = path.join(projectDir, 'package.json');
-  const pkgJson = await readFileAsJson(pkgJsonPath);
-  Object.assign(pkgJson.scripts, { dev: `NODE_ENV=${mode} vite --port ${devPort}` });
-  await writeFileAsJson(pkgJsonPath, pkgJson);
-
-  const alias = createAlias();
-  const viteConfigPath = path.join(projectDir, `vite.config.${useTs ? 'ts' : 'js'}`);
-  let viteConfig = await fs.readFile(viteConfigPath, { encoding: 'utf-8' });
-  Object.keys(alias).forEach((key, i) => {
-    viteConfig = viteConfig.replace(`$${i}`, alias[key]);
-  });
-  await fs.writeFile(viteConfigPath, viteConfig);
-
-  // install deps
-  cd(projectDir);
-  await spawnRunCommand('npm', ['install'], (data) => {
-    console.log(data);
-  });
-  uncd();
-
-  hint.success('Created project with vite successfully!');
-
-  console.log(`Please cd ${projectDir} and run "npm run dev"`);
-}
-
 async function prepareTestProject({
   scaffold,
   dir: projectDir,
@@ -342,22 +237,24 @@ async function prepareTestProject({
     }
 
     const info = {
+      reactDir,
+      reactVersion,
       projectDir,
       useTs,
       mode,
-      reactDir,
-      reactVersion,
       devPort: port,
     };
 
+    let instance;
     switch (scaffold) {
       case 'create-react-app':
-        await initProjectWithCRA(info);
+        instance = new ScaffoldCRA(info);
         break;
       default:
-        await initProjectWithVite(info);
+        instance = new ScaffoldVite(info);
         break;
     }
+    instance.initProject();
   }
 
   return { testProjectDir: projectDir, devPort: port };

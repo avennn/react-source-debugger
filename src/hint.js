@@ -7,7 +7,7 @@ const hint = {
   success(...args) {
     console.log(chalk.green(...args), '\n');
   },
-  warn() {
+  warn(...args) {
     console.log(chalk.yellow(...args), '\n');
   },
   error(...args) {

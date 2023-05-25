@@ -1,11 +1,11 @@
-import shell from 'shelljs';
 import { spawnRunCommand } from '../utils.js';
+import { cd, uncd } from '../shell/index.js';
 
 export async function fetchRemoteTag(options) {
   // git fetch origin +refs/tags/1.0.0:refs/tags/1.0.0
   const { dir, ref, options: extraOpts = [], onProgress = () => {} } = options;
 
-  shell.cd(dir);
+  cd(dir);
 
   await spawnRunCommand(
     'git',
@@ -20,4 +20,6 @@ export async function fetchRemoteTag(options) {
     ],
     onProgress
   );
+
+  uncd();
 }
