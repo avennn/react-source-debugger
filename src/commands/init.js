@@ -14,6 +14,7 @@ import { cd, uncd } from '../shell/index.js';
 import { shallowClone, checkout, listTags, fetchRemoteTag } from '../git/index.js';
 import { projectRoot, reactDataDir, defaultProjectName } from '../constants.js';
 import { spawnRunCommand, getAvailablePort, compareVersion } from '../utils.js';
+import hint from '../hint.js';
 
 const require = createRequire(import.meta.url);
 
@@ -108,7 +109,7 @@ async function gitCloneReact({ dir, ref }) {
       },
     });
   } catch (e) {
-    console.error(e);
+    hint.error(e);
     throw new Error(`Fail to clone React. code: ${e.code}, signal: ${e.signal}.`);
   }
 }
@@ -160,7 +161,7 @@ async function copyReactBuildResult(reactDir, reactVersion) {
 }
 
 async function gitCheckoutReact(dir, ref) {
-  console.log(chalk.cyan('Checking out...'));
+  hint.doing('Checking out...');
 
   const tags = await listTags({ dir });
   if (!tags.includes(ref)) {
@@ -168,15 +169,18 @@ async function gitCheckoutReact(dir, ref) {
   }
   await checkout({ dir, ref });
 
-  console.log(chalk.green('Checked out successfully!'));
+  hint.success('Checked out successfully!');
 }
 
 async function prepareReact({ dir: reactDir, version: reactVersion, mode }) {
   const matchedVersion = await matchNearestVersion(reactVersion);
 
   if (matchedVersion !== reactVersion) {
-    console.log(
-      chalk.yellow(`Not support react v${reactVersion}. Using v${matchedVersion} instead.`)
+    hint.warn(
+      `Not support react ${chalk.bold('v', reactVersion)}. Using ${chalk.bold(
+        'v',
+        matchedVersion
+      )} instead.`
     );
   }
 
@@ -185,11 +189,11 @@ async function prepareReact({ dir: reactDir, version: reactVersion, mode }) {
   if (!reactDir) {
     reactDir = path.join(process.cwd(), 'react');
     if (!isFileOrDirExisted(reactDir)) {
-      console.log(chalk.cyan('Cloning react...'));
+      hint.doing('Cloning react...');
       await gitCloneReact({ dir: reactDir, ref: tag });
-      console.log(chalk.green('Cloned react successfully!'));
+      hint.success('Cloned react successfully!');
     } else {
-      console.log(chalk.yellow('Already has react. Skip clone phase.'));
+      hint.warn('Already has react. Skip clone phase.');
       await gitCheckoutReact(reactDir, tag);
     }
   } else {
@@ -198,7 +202,7 @@ async function prepareReact({ dir: reactDir, version: reactVersion, mode }) {
 
   // since react17 react16 production reguire "object-assign", we need to install deps
   if (['16', '17'].includes(matchedVersion.split('.')[0]) && mode === 'production') {
-    console.log(chalk.cyan(`Installing react v${matchedVersion} deps.`));
+    hint.doing(`Installing react v${matchedVersion} deps.`);
     cd(reactDir);
     await spawnRunCommand(
       'yarn',
@@ -207,13 +211,13 @@ async function prepareReact({ dir: reactDir, version: reactVersion, mode }) {
         console.log(data);
       }
     );
-    console.log(chalk.green(`Installed react v${matchedVersion} deps successfully!`));
+    hint.success(`Installed react v${matchedVersion} deps successfully!`);
     uncd();
   }
 
-  console.log(chalk.cyan('Coping react build...'));
+  hint.doing('Coping react build...');
   await copyReactBuildResult(reactDir, matchedVersion);
-  console.log(chalk.green('Copied react build successfully!'));
+  hint.success('Copied react build successfully!');
 
   return reactDir;
 }
@@ -237,7 +241,7 @@ async function initProjectWithCRA({
     };
   }
 
-  console.log(chalk.cyan('Creating project with create-react-app.'));
+  hint.doing('Creating project with create-react-app.');
 
   const [majorVersion] = reactVersion.split('.');
   const dirName = `react${majorVersion}${useTs ? '-ts' : ''}`;
@@ -275,7 +279,7 @@ async function initProjectWithCRA({
   console.log(`Please cd ${projectDir} and run "npm start"`);
   uncd();
 
-  console.log(chalk.green('Created project with create-react-app successfully!'));
+  hint.success('Created project with create-react-app successfully!');
 }
 
 async function initProjectWithVite({
@@ -297,7 +301,7 @@ async function initProjectWithVite({
     };
   }
 
-  console.log(chalk.cyan('Creating project with vite.'));
+  hint.doing('Creating project with vite.');
 
   const [majorVersion] = reactVersion.split('.');
   const dirName = `react${majorVersion}${useTs ? '-ts' : ''}`;
@@ -328,7 +332,7 @@ async function initProjectWithVite({
   console.log(`Please cd ${projectDir} and run "npm run dev"`);
   uncd();
 
-  console.log(chalk.green('Created project with vite successfully!'));
+  hint.success('Created project with vite successfully!');
 }
 
 async function prepareTestProject({
@@ -437,7 +441,7 @@ export default async function init(options) {
       mode: testProject.mode,
     });
   } catch (e) {
-    console.error(chalk.redBright(e.message));
+    hint.error(e);
     process.exit(1);
   }
 }

@@ -42,7 +42,6 @@ export async function getAvailablePort(defaultPort) {
   try {
     return await detectPort(defaultPort);
   } catch (e) {
-    console.error(e);
     return defaultPort;
   }
 }

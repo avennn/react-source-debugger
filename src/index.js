@@ -6,6 +6,7 @@ import chalk from 'chalk';
 import { create, init } from './commands/index.js';
 import { projectRoot } from './constants.js';
 import { readFileAsJson } from './file.js';
+import hint from './hint.js';
 
 try {
   const { version } = await readFileAsJson(path.join(projectRoot, 'package.json'));
@@ -29,5 +30,5 @@ try {
 
   program.parse();
 } catch (e) {
-  console.error(chalk.red(e.message));
+  hint.error(e);
 }
