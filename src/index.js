@@ -1,21 +1,14 @@
 #! /usr/bin/env node
 
-import fs from 'node:fs/promises';
 import path from 'node:path';
-import { createRequire } from 'node:module';
 import { Command } from 'commander';
 import chalk from 'chalk';
-import { getDirName } from './utils.js';
 import { create, init } from './commands/index.js';
-
-const require = createRequire(import.meta.url);
-const { safeJsonParse } = require('tori');
+import { projectRoot } from './constants.js';
+import { readFileAsJson } from './file.js';
 
 try {
-  const pkgJsonText = await fs.readFile(path.join(getDirName(import.meta.url), '../package.json'), {
-    encoding: 'utf8',
-  });
-  const { version } = safeJsonParse(pkgJsonText, {});
+  const { version } = await readFileAsJson(path.join(projectRoot, 'package.json'));
 
   const program = new Command();
   program.version(version, '-v, --version');
@@ -36,5 +29,5 @@ try {
 
   program.parse();
 } catch (e) {
-  console.error(chalk.redBright(e.message));
+  console.error(chalk.red(e.message));
 }
