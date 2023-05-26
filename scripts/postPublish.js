@@ -7,5 +7,6 @@ const require = createRequire(import.meta.url);
 const { version } = require('../package.json');
 
 const ver = `v${version}`;
-console.log(await exec(`git tag -a ${ver} -m "release ${ver}"`));
-console.log(await exec('git push origin --tags'));
+await exec(`git tag -a ${ver} -m "release ${ver}"`);
+const { stderr } = await exec('git push origin --tags');
+console.log(stderr);
