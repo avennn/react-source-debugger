@@ -24,6 +24,14 @@ cd my-react-debug-app
 rsd init
 ```
 
+现在，我们在`my-react-debug-app`目录下可以看到 React 源码目录`react`、测试项目`test-demo`以及 vscode workspace 文件`rsd.code-workspace`。
+
+然后，我们通过以下几步开启调试：
+
+1. vscode 打开`rsd.code-workspace`；
+2. 运行`test-demo`开发环境；
+3. vscode 启动调试。
+
 ## 配置
 
 `rsd init`会从当前目录查找配置文件（`rsd.config.{js,mjs,cjs,json}`）。如果没有，会使用默认配置。

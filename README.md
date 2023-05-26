@@ -24,6 +24,14 @@ cd my-react-debug-app
 rsd init
 ```
 
+Now, we have `react`(React source code directory)、`test-demo`(test project) and `rsd.code-workspace`(vscode workspace file) under `my-react-debug-app`.
+
+And then, we can start debugging by doing these:
+
+1. open `rsd.code-workspace` with vscode;
+2. start dev in `test-demo`;
+3. launch debug within vscode `Run and Debug` module.
+
 ## Configuration
 
 `rsd init` automatically finds configuartion file(`rsd.config.{js,mjs,cjs,json}`) from current directory. If not found, will use default configuration.
