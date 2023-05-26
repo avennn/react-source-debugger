@@ -1,6 +1,6 @@
 import path from 'node:path';
 import chalk from 'chalk';
-import BaseAdapter from './base-adapter.js';
+import BaseAdapter from './baseAdapter.js';
 
 export default class ViteAdapter extends BaseAdapter {
   constructor(options) {
