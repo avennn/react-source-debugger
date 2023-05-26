@@ -1,2 +1,2 @@
-export { default as ScaffoldCRA } from './cra-adapter.js';
-export { default as ScaffoldVite } from './vite-adapter.js';
+export { default as ScaffoldCRA } from './craAdapter.js';
+export { default as ScaffoldVite } from './viteAdapter.js';

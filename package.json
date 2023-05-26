@@ -18,7 +18,7 @@
     }
   },
   "scripts": {
-    "postpublish": "node scripts/post-publish.js"
+    "postpublish": "node scripts/postPublish.js"
   },
   "repository": {
     "type": "git",
