@@ -79,7 +79,7 @@ scaffold of test project, default `vite`. Supports:
 
 ### testProject.useTs
 
-use `ts` or not，默认为 `true`.
+use `ts` or not, default `true`.
 
 ### testProject.mode
 
