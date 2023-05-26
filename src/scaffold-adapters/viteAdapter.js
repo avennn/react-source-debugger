@@ -21,7 +21,7 @@ export default class ViteAdapter extends BaseAdapter {
     };
   }
 
-  getDevConfig() {
+  getAliasConfig() {
     const { projectDir, useTs } = this.options;
     return path.join(projectDir, `vite.config.${useTs ? 'ts' : 'js'}`);
   }

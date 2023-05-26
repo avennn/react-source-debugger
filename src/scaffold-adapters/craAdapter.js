@@ -1,6 +1,7 @@
 import path from 'node:path';
 import chalk from 'chalk';
 import BaseAdapter from './baseAdapter.js';
+import { replaceFileContent } from '../file.js';
 
 export default class CraAdapter extends BaseAdapter {
   constructor(options) {
@@ -20,8 +21,21 @@ export default class CraAdapter extends BaseAdapter {
     };
   }
 
-  getDevConfig() {
+  getAliasConfig() {
     const { projectDir } = this.options;
     return path.join(projectDir, 'config/webpack.config.js');
+  }
+
+  async modifyMode() {
+    // start script
+    const { projectDir, mode } = this.options;
+    await replaceFileContent(path.join(projectDir, 'scripts/start.js'), (content) =>
+      content.replaceAll('$mode', mode)
+    );
+  }
+
+  async modifyDevConfig() {
+    await this.modifyAlias();
+    await this.modifyMode();
   }
 }

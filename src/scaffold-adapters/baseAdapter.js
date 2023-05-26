@@ -71,19 +71,24 @@ export default class BaseAdapter {
   }
 
   // @abstract
-  async getDevConfig() {
+  async getAliasConfig() {
     return '';
   }
 
-  async modifyDevConfig() {
+  async modifyAlias() {
     const alias = await this.createAlias();
-    const configPath = await this.getDevConfig();
+    const configPath = await this.getAliasConfig();
     await replaceFileContent(configPath, (content) => {
       alias.forEach((item, i) => {
         content = content.replaceAll(`$${i}`, item);
       });
       return content;
     });
+  }
+
+  // @abstract
+  async modifyDevConfig() {
+    await this.modifyAlias();
   }
 
   async installDeps() {
