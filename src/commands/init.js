@@ -254,13 +254,14 @@ async function createVscodeWorkspace(wsDir, { reactDir, testProjectDir, devPort,
   // We want to keep react at the top since it is helpful for debugging react source code.
   // And ${workspaceFolder} equals to first folder path, so is react.
   // We need to change it to testProject.
-  const relativePath = path.relative(reactDir, testProjectDir);
+  const testProjectName = defaultProjectName;
   const configItem = {
     type: 'chrome',
     request: 'launch',
     name: 'Launch Chrome against localhost',
     url: `http://localhost:${devPort}`,
-    webRoot: '${workspaceFolder}/' + relativePath,
+    // https://code.visualstudio.com/docs/editor/variables-reference#_variables-scoped-per-workspace-folder
+    webRoot: '${workspaceFolder:' + testProjectName + '}',
     sourceMaps: true,
   };
   if (scaffold === 'create-react-app' && mode === 'production') {
@@ -271,7 +272,10 @@ async function createVscodeWorkspace(wsDir, { reactDir, testProjectDir, devPort,
     });
   }
   const config = {
-    folders: [{ path: reactDir }, { path: testProjectDir }],
+    folders: [
+      { name: 'react', path: reactDir },
+      { name: testProjectName, path: testProjectDir },
+    ],
     launch: {
       version: '0.2.0',
       configurations: [configItem],
