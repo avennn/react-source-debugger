@@ -109,3 +109,11 @@ Apple M1 机器安装依赖时会报错，解决办法看[这里](https://github
 ```sh
 yarn build
 ```
+
+## 作者
+
+[Javen Leung](https://github.com/avennn)
+
+## 证书
+
+[MIT](./LICENSE)

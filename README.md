@@ -109,3 +109,11 @@ Installation in Apple M1 machine would throw error, solution see [here](https://
 ```sh
 yarn build
 ```
+
+## Author
+
+[Javen Leung](https://github.com/avennn)
+
+## License
+
+[MIT](./LICENSE)
