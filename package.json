@@ -1,7 +1,7 @@
 {
   "name": "react-source-debugger",
   "version": "1.0.0",
-  "description": "A debugger for learning React source code",
+  "description": "A tool for quickly setting up the environment of debugging React source code.",
   "main": "src/index.js",
   "type": "module",
   "engines": {
