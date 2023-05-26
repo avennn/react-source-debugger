@@ -1,3 +1,5 @@
+<a href="README.md">English</a>｜<a href="README.zh_CN.md">简体中文</a>
+
 # react-source-debugger
 
 一个快速搭建 React 源码调试环境的工具。
