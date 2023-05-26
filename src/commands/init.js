@@ -7,7 +7,7 @@ import deepMerge from 'deepmerge';
 import { isFileOrDirExisted } from '../file.js';
 import { cd, uncd } from '../shell/index.js';
 import { shallowClone, checkout, listTags, fetchRemoteTag } from '../git/index.js';
-import { reactDataDir, defaultProjectName } from '../constants.js';
+import { reactDataDir, defaultProjectName, defaultConfig } from '../constants.js';
 import { spawnRunCommand, getAvailablePort, compareVersion } from '../utils.js';
 import hint from '../hint.js';
 import { ScaffoldVite, ScaffoldCRA } from '../scaffold-adapters/index.js';
@@ -73,17 +73,6 @@ async function loadConfig(target) {
 
 async function finalizeConfig(target) {
   const config = await loadConfig(target);
-  const defaultConfig = {
-    react: {
-      version: '18.2.0',
-    },
-    testProject: {
-      scaffold: 'vite',
-      useTs: false,
-      devPort: 3000,
-      mode: 'development', // production
-    },
-  };
   return deepMerge(defaultConfig, {
     react: config.react || {},
     testProject: config.testProject || {},

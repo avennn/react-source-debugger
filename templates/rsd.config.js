@@ -4,8 +4,8 @@ export default {
   },
   testProject: {
     scaffold: 'vite',
-    useTs: false,
+    useTs: true,
+    mode: 'development',
     devPort: 3000,
-    mode: 'development', // production
   }
 }
