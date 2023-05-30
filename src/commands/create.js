@@ -11,7 +11,7 @@ export default function create(projectName) {
       throw new Error(`Already has a directory or file named ${projectName}`);
     }
     shell.mkdir('-p', projectName);
-    shell.cp(path.join(projectRoot, './templates/rsd.config.js'), dir);
+    shell.cp(path.join(projectRoot, './templates/rsd.config.mjs'), dir);
   } catch (e) {
     hint.error(e);
     process.exit(1);
