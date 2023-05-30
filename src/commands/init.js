@@ -186,7 +186,7 @@ async function prepareReact({ dir: reactDir, version: reactVersion, mode }) {
   }
 
   // since react17 react16 production reguire "object-assign", we need to install deps
-  if (['16', '17'].includes(matchedVersion.split('.')[0]) && mode === 'production') {
+  if (['16', '17'].includes(matchedVersion.split('.')[0])) {
     hint.doing(`Installing react v${matchedVersion} deps.`);
     cd(reactDir);
     await spawnRunCommand(
