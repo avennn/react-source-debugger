@@ -120,7 +120,7 @@ yarn build
 
 ## 作者
 
-[Javen Leung](https://github.com/avennn)
+[Thomas Leung](https://github.com/avennn)
 
 ## 证书
 

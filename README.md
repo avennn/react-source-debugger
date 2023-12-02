@@ -120,7 +120,7 @@ yarn build
 
 ## Author
 
-[Javen Leung](https://github.com/avennn)
+[Thomas Leung](https://github.com/avennn)
 
 ## License
 
